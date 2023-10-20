@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css"
+      integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+      crossorigin="anonymous"
+    />
+    <title>Chat Home</title>
+    <style>
+      .arial {
+        font-family: Arial;
+      }
+
+      body {
+        margin: 0;
+        padding-bottom: 3rem;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif;
+      }
+
+      h1 {
+        color: rgb(80, 221, 179);
+      }
+      h4 {
+        color: rgb(53, 186, 244);
+      }
+      h5 {
+        color: rgb(81, 69, 248);
+      }
+      h6 {
+        color: grey;
+      }
+
+      button {
+        background-color: rgb(80, 221, 179);
+      }
+
+      button:hover {
+        background-color: rgb(53, 186, 244);
+      }
+
+      button:focus {
+        background-color: rgb(81, 69, 248);
+      }
+      #message_input {
+        border: black;
+        background-color: #e9e9e9;
+        padding: 0 1rem;
+        flex-grow: 1;
+        border-radius: 2rem;
+        margin: 0.25rem;
+      }
+      #send_btn {
+        background: #333;
+        /* border: none; */
+        padding: 0 1rem;
+        margin: 0.25rem;
+        border-radius: 3px;
+        outline: none;
+        color: #fff;
+      }
+    </style>
+    <script src="/socket.io/socket.io.js"></script>
+    <script type="text/javascript">
+      var socketio = io.connect();
+      var username = "NULL";
+      socketio.on("login_update", function (data) {
+        // display room related info
+        username = data["username"];
+        document.getElementById("username").innerHTML = username;
+        document.getElementById("username").setAttribute("disabled", "");
+        document.getElementById("sign_on_btn").setAttribute("disabled", "");
+        //TODO
+        // document
+        //   .getElementById("room_name_display")
+        //   .removeAttribute("disabled");
+        document.getElementById("room_name").removeAttribute("disabled");
+        document.getElementById("room_pwd").removeAttribute("disabled");
+        document.getElementById("message_input").removeAttribute("disabled");
+        document.getElementById("send_btn").removeAttribute("disabled");
+        document.getElementById("pm_user").removeAttribute("disabled");
+        // document.getElementById("image_input").removeAttribute("disabled");
+        document.getElementById("action_user").removeAttribute("disabled");
+        document.getElementById("ban_btn").removeAttribute("disabled");
+        document.getElementById("unban_btn").removeAttribute("disabled");
+        document.getElementById("kick_btn").removeAttribute("disabled");
+        document.getElementById("invite_btn").removeAttribute("disabled");
+        document.getElementById("mute_btn").removeAttribute("disabled");
+        document.getElementById("unmute_btn").removeAttribute("disabled");
+        document.getElementById("create_room_btn").removeAttribute("disabled");
+        document.getElementById("join_room_btn").removeAttribute("disabled");
+      });
+
+      socketio.on("message_to_client", function (data) {
+        //Append an HR thematic break and the escaped HTML of the new message
+        document
+          .getElementById("chatlog")
+          .appendChild(document.createElement("hr"));
+        document
+          .getElementById("chatlog")
+          .appendChild(document.createTextNode(data["message"]));
+      });
+
+      //message to user from system
+      socketio.on("server_to_client_msg", function (data) {
+        var msg = data["message"];
+        var section_id = data["section"];
+        document.getElementById(section_id).innerHTML = msg;
+      });
+
+      //update user list
+      socketio.on("user_list", function (data) {
+        users = data["users"];
+        banned_users = data["banned_users"];
+        muted_users = data["muted_users"];
+
+        const element = document.getElementById("user_list_stuff");
+        const new_user_list = document.createElement("ul");
+        var select = document.getElementById("pm_user");
+
+        document.getElementById("room_name_display").innerHTML =
+          data["room_name"];
+        document.getElementById("room_owner").innerHTML = data["room_owner"];
+        for (const user of users) {
+          var li = new_user_list.appendChild(document.createElement("li"));
+          li.appendChild(document.createTextNode(user));
+          li.innerHTML = user;
+          var el = document.createElement("option");
+          el.textContent = user;
+          el.value = user;
+          select.appendChild(el);
+        }
+        new_user_list.setAttribute("id", "user_list_stuff");
+        element.replaceWith(new_user_list);
+
+        //banned user
+        const element_ban = document.getElementById("banned_user_list");
+        const new_ban_list = document.createElement("ul");
+        for (const user of banned_users) {
+          var li = new_ban_list.appendChild(document.createElement("li"));
+          li.appendChild(document.createTextNode(user));
+          li.innerHTML = user;
+        }
+        new_ban_list.setAttribute("id", "banned_user_list");
+        element_ban.replaceWith(new_ban_list);
+
+        //banned user
+        const element_mute = document.getElementById("muted_user_list");
+        const new_mute_list = document.createElement("ul");
+        for (const user of muted_users) {
+          var li = new_mute_list.appendChild(document.createElement("li"));
+          li.appendChild(document.createTextNode(user));
+          li.innerHTML = user;
+        }
+        new_mute_list.setAttribute("id", "muted_user_list");
+        element_mute.replaceWith(new_mute_list);
+      });
+
+      //update room list
+      socketio.on("room_list", function (room_list) {
+        console.log("inside html room_list function");
+        const element = document.getElementById("room_list_stuff");
+        element.remove();
+
+        const new_room_list = document.createElement("ul");
+        Object.keys(room_list).forEach(function (room) {
+          console.log("received room_list");
+          new_room_list
+            .appendChild(document.createElement("li"))
+            .appendChild(
+              document.createTextNode(
+                room +
+                  " (online: " +
+                  room_list[room]["online_users"].length +
+                  ")"
+              )
+            );
+        });
+        new_room_list.setAttribute("id", "room_list_stuff");
+        document.getElementById("room_list").appendChild(new_room_list);
+      });
+
+      // force user to move room
+      socketio.on("forced_move", function (data) {
+        socketio.emit("join_room", {
+          room_name: data["new_room"],
+        });
+      });
+
+      function sendMessage() {
+        var msg = document.getElementById("message_input").value;
+        var pm_user = document.getElementById("pm_user").value;
+        socketio.emit("message_to_server", { message: msg, pm_user: pm_user });
+        document.getElementById("message_input").value = "";
+        document.getElementById("pm_user").value = "everyone";
+      }
+
+      function login() {
+        var username = document.getElementById("username").value;
+        socketio.emit("login", { username: username });
+        // document.getElementById("greeting_user").value = username;
+      }
+
+      function disconnect() {
+        socketio.emit("disconnect", { username: username });
+      }
+
+      function create_room() {
+        var room_name = document.getElementById("room_name").value;
+        var room_pwd = document.getElementById("room_pwd").value;
+        socketio.emit("create_room", {
+          room_name: room_name,
+          room_pwd: room_pwd,
+          room_owner: username,
+        });
+        document.getElementById("room_name").value = "";
+        document.getElementById("room_pwd").value = "";
+      }
+
+      function join_room() {
+        var room_name = document.getElementById("room_name").value;
+        var room_pwd = document.getElementById("room_pwd").value;
+        socketio.emit("join_room", {
+          room_name: room_name,
+          room_pwd: room_pwd,
+        });
+        document.getElementById("room_name").value = "";
+        document.getElementById("room_pwd").value = "";
+      }
+
+      function ban_user() {
+        const action_user = document.getElementById("action_user").value;
+        socketio.emit("ban_user", {
+          author: username,
+          action_user: action_user,
+        });
+      }
+      function unban_user() {
+        const action_user = document.getElementById("action_user").value;
+        socketio.emit("unban_user", {
+          author: username,
+          action_user: action_user,
+        });
+      }
+      function kick_user() {
+        const action_user = document.getElementById("action_user").value;
+        socketio.emit("kick_user", {
+          author: username,
+          action_user: action_user,
+        });
+      }
+      function invite_user() {
+        const action_user = document.getElementById("action_user").value;
+        socketio.emit("invite_user", {
+          author: username,
+          action_user: action_user,
+        });
+      }
+      function mute_user() {
+        const action_user = document.getElementById("action_user").value;
+        socketio.emit("mute_user", {
+          author: username,
+          action_user: action_user,
+        });
+      }
+      function unmute_user() {
+        const action_user = document.getElementById("action_user").value;
+        socketio.emit("unmute_user", {
+          author: username,
+          action_user: action_user,
+        });
+      }
+    </script>
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="col" id="creat_join_room">
+          <input type="text" id="room_name" disabled placeholder="room name" />
+          <button class="btn" id="join_room_btn" disabled onclick="join_room()">
+            Join
+          </button>
+          <input
+            type="text"
+            id="room_pwd"
+            disabled
+            placeholder="room password"
+          />
+          <button
+            class="btn"
+            id="create_room_btn"
+            disabled
+            onclick="create_room()"
+          >
+            Create
+          </button>
+          <p id="msg_to_client_create_room"></p>
+          <div id="room_list">
+            <h1>Rooms:</h1>
+            <ul id="room_list_stuff">
+              Null
+            </ul>
+          </div>
+        </div>
+        <div class="col" id="user_list">
+          <div id="sign_on">
+            <input type="text" id="username" placeholder="username" />
+            <button class="btn" id="sign_on_btn" onclick="login()">
+              Sign On
+            </button>
+            <p id="msg_to_client_login"></p>
+          </div>
+          <h4>Current Room:</h4>
+          <h4 id="room_name_display" disable></h4>
+          <h5>Room owner:</h5>
+          <h6 id="room_owner">Null</h6>
+          <h5>Users in room:</h5>
+          <ul id="user_list_stuff"></ul>
+          <h5>banned users:</h5>
+          <ul id="banned_user_list"></ul>
+          <h5>muted users:</h5>
+          <ul id="muted_user_list"></ul>
+          <div id="owner_tool">
+            <h4>Room owner tool:</h4>
+            <input type="text" id="action_user" disabled />
+            <p id="msg_to_client_owner_tool"></p>
+            <button class="btn" id="ban_btn" disabled onclick="ban_user()">
+              ban
+            </button>
+            <button class="btn" id="unban_btn" disabled onclick="unban_user()">
+              unban
+            </button>
+            <button class="btn" id="kick_btn" disabled onclick="kick_user()">
+              kick
+            </button>
+            <button
+              class="btn"
+              id="invite_btn"
+              disabled
+              onclick="invite_user()"
+            >
+              invite
+            </button>
+            <button class="btn" id="mute_btn" disabled onclick="mute_user()">
+              mute
+            </button>
+            <button
+              class="btn"
+              id="unmute_btn"
+              disabled
+              onclick="unmute_user()"
+            >
+              unmute
+            </button>
+          </div>
+        </div>
+        <div class="col" id="indiv_room">
+          <p id="msg_to_client"></p>
+          <p>message to:</p>
+          <select disabled id="pm_user">
+            <option>everyone</option>
+          </select>
+          <br />
+          <input type="text" id="message_input" disabled />
+          <button class="btn" id="send_btn" disabled onclick="sendMessage()">
+            send
+          </button>
+          <div id="chatlog"></div>
+        </div>
+      </div>
+    </div>
+    <script
+      src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+      integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js"
+      integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js"
+      integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+      crossorigin="anonymous"
+    ></script>
+  </body>
+</html>
