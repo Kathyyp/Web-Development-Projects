@@ -1,9 +1,4 @@
 # CSE330
-
-Kathy Pan ID: 498595 Username: Kathyyp
-
-Yao Zhong ID: 487935 Username: wustlYao
-
 Creative Portion:
 
 - user can invite other exist user to the room they are in
