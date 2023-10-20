@@ -1,9 +1,4 @@
 # CSE330
-
-Kathy Pan ID: 498595 Username: Kathyyp
-
-Yao Zhong ID: 487935 Username: WustlYao
-
 Link to Calendar: http://ec2-54-196-246-202.compute-1.amazonaws.com/~akkaii/module5_group/calendar/calendar.html
 
 Creative Portion:
