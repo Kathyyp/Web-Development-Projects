@@ -1,2 +1,2 @@
 # Web-Development-Projects
-Web development Projects
+Demo of Kathy's Web development Projects
